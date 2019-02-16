@@ -1,2 +1,2 @@
-# cache-benchmark
+# cache-benchmark [![Build Status](https://travis-ci.org/read-and-code/cache-benchmark.svg?branch=master)](https://travis-ci.org/read-and-code/cache-benchmark) [![Build status](https://ci.appveyor.com/api/projects/status/xh2g8hyk9a4g5qdv/branch/master?svg=true)](https://ci.appveyor.com/project/Frederick-S/cache-benchmark/branch/master) [![Go Report Card](https://goreportcard.com/badge/github.com/read-and-code/cache-benchmark)](https://goreportcard.com/report/github.com/read-and-code/cache-benchmark)
 《分布式缓存——原理、架构及Go语言实现》性能测试工具。
