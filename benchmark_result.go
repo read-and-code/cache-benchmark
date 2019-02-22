@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 type BenchmarkResult struct {
 	getCount int
 
@@ -24,4 +26,18 @@ func (benchmarkResult *BenchmarkResult) addStatistic(bucket int, benchmarkStatis
 	statisticBucket.time += benchmarkStatistic.time
 
 	benchmarkResult.StatisticBuckets[bucket] = statisticBucket
+}
+
+func (benchmarkResult *BenchmarkResult) addDuration(duration time.Duration, typeName string) {
+	bucket := int(duration / time.Millisecond)
+
+	benchmarkResult.addStatistic(bucket, BenchmarkStatistic{1, duration})
+
+	if typeName == "get" {
+		benchmarkResult.getCount++
+	} else if typeName == "set" {
+		benchmarkResult.setCount++
+	} else {
+		benchmarkResult.missCount++
+	}
 }
