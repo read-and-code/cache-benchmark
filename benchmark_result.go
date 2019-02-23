@@ -41,3 +41,13 @@ func (benchmarkResult *BenchmarkResult) addDuration(duration time.Duration, type
 		benchmarkResult.missCount++
 	}
 }
+
+func (benchmarkResult *BenchmarkResult) addResult(src *BenchmarkResult) {
+	for bucket, statistic := range src.StatisticBuckets {
+		benchmarkResult.addStatistic(bucket, statistic)
+	}
+
+	benchmarkResult.getCount += src.getCount
+	benchmarkResult.missCount += src.missCount
+	benchmarkResult.setCount += src.setCount
+}
