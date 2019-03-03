@@ -22,7 +22,7 @@ func (benchmarkResult *BenchmarkResult) addStatistic(index int, benchmarkStatist
 	}
 
 	statisticBucket := benchmarkResult.StatisticBuckets[index]
-	statisticBucket.count += benchmarkStatistic.count
+	statisticBucket.operationCount += benchmarkStatistic.operationCount
 	statisticBucket.duration += benchmarkStatistic.duration
 
 	benchmarkResult.StatisticBuckets[index] = statisticBucket

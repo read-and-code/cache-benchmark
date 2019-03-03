@@ -3,7 +3,7 @@ package main
 import "time"
 
 type BenchmarkStatistic struct {
-	count int
+	operationCount int
 
 	duration time.Duration
 }
