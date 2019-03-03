@@ -5,5 +5,5 @@ import "time"
 type BenchmarkStatistic struct {
 	count int
 
-	time time.Duration
+	duration time.Duration
 }

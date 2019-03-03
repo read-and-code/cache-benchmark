@@ -166,7 +166,7 @@ func main() {
 		}
 
 		statisticCountSum += statisticBucket.count
-		statisticTimeSum += statisticBucket.time
+		statisticTimeSum += statisticBucket.duration
 
 		fmt.Printf("%d%% requests < %d ms\n", statisticCountSum*100/totalCount, i+1)
 	}

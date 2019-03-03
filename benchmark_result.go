@@ -12,26 +12,26 @@ type BenchmarkResult struct {
 	StatisticBuckets []BenchmarkStatistic
 }
 
-func (benchmarkResult *BenchmarkResult) addStatistic(bucket int, benchmarkStatistic BenchmarkStatistic) {
-	if bucket > len(benchmarkResult.StatisticBuckets)-1 {
-		newStatisticBuckets := make([]BenchmarkStatistic, bucket+1)
+func (benchmarkResult *BenchmarkResult) addStatistic(index int, benchmarkStatistic BenchmarkStatistic) {
+	if index > len(benchmarkResult.StatisticBuckets)-1 {
+		newStatisticBuckets := make([]BenchmarkStatistic, index+1)
 
 		copy(newStatisticBuckets, benchmarkResult.StatisticBuckets)
 
 		benchmarkResult.StatisticBuckets = newStatisticBuckets
 	}
 
-	statisticBucket := benchmarkResult.StatisticBuckets[bucket]
+	statisticBucket := benchmarkResult.StatisticBuckets[index]
 	statisticBucket.count += benchmarkStatistic.count
-	statisticBucket.time += benchmarkStatistic.time
+	statisticBucket.duration += benchmarkStatistic.duration
 
-	benchmarkResult.StatisticBuckets[bucket] = statisticBucket
+	benchmarkResult.StatisticBuckets[index] = statisticBucket
 }
 
 func (benchmarkResult *BenchmarkResult) addDuration(duration time.Duration, typeName string) {
-	bucket := int(duration / time.Millisecond)
+	index := int(duration / time.Millisecond)
 
-	benchmarkResult.addStatistic(bucket, BenchmarkStatistic{1, duration})
+	benchmarkResult.addStatistic(index, BenchmarkStatistic{1, duration})
 
 	if typeName == "get" {
 		benchmarkResult.getCount++
@@ -42,12 +42,12 @@ func (benchmarkResult *BenchmarkResult) addDuration(duration time.Duration, type
 	}
 }
 
-func (benchmarkResult *BenchmarkResult) addResult(src *BenchmarkResult) {
-	for bucket, statistic := range src.StatisticBuckets {
-		benchmarkResult.addStatistic(bucket, statistic)
+func (benchmarkResult *BenchmarkResult) addResult(source *BenchmarkResult) {
+	for index, benchmarkStatistic := range source.StatisticBuckets {
+		benchmarkResult.addStatistic(index, benchmarkStatistic)
 	}
 
-	benchmarkResult.getCount += src.getCount
-	benchmarkResult.missCount += src.missCount
-	benchmarkResult.setCount += src.setCount
+	benchmarkResult.getCount += source.getCount
+	benchmarkResult.missCount += source.missCount
+	benchmarkResult.setCount += source.setCount
 }
