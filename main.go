@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/read-and-code/cache-benchmark/cache_client"
 	"math/rand"
@@ -112,6 +113,65 @@ func operate(id, count int, channel chan *BenchmarkResult) {
 var cacheClientType, serverAddress, operation string
 var totalRequests, valueSize, threads, keyspaceLength, pipelineLength int
 
+func init() {
+	flag.StringVar(&cacheClientType, "type", "redis", "cache server type")
+	flag.StringVar(&serverAddress, "host", "localhost", "cache server address")
+	flag.IntVar(&totalRequests, "n", 1000, "total number of requests")
+	flag.IntVar(&valueSize, "d", 1000, "data size of SET/GET value in bytes")
+	flag.IntVar(&threads, "c", 1, "number of parallel connections")
+	flag.StringVar(&operation, "t", "set", "test set, could be get/set/mixed")
+	flag.IntVar(&keyspaceLength, "r", 0, "keyspace length, use random keys from 0 to keyspacelen - 1")
+	flag.IntVar(&pipelineLength, "p", 1, "pipeline length")
+	flag.Parse()
+
+	fmt.Println("cache client type is", cacheClientType)
+	fmt.Println("server address is", serverAddress)
+	fmt.Println("total number of requests", totalRequests)
+	fmt.Println("data size is", valueSize)
+	fmt.Println("we have", threads, "parallel connections")
+	fmt.Println("operation is", operation)
+	fmt.Println("keyspace length is", keyspaceLength)
+	fmt.Println("pipeline length is", pipelineLength)
+
+	rand.Seed(time.Now().UnixNano())
+}
+
 func main() {
-	fmt.Println("Hello")
+	channel := make(chan *BenchmarkResult, threads)
+	benchmarkResult := &BenchmarkResult{0, 0, 0, make([]BenchmarkStatistic, 0)}
+	startTime := time.Now()
+
+	for i := 0; i < threads; i++ {
+		go operate(i, totalRequests/threads, channel)
+	}
+
+	for i := 0; i < threads; i++ {
+		benchmarkResult.addResult(<-channel)
+	}
+
+	duration := time.Now().Sub(startTime)
+	totalCount := benchmarkResult.getCount + benchmarkResult.missCount + benchmarkResult.setCount
+
+	fmt.Printf("%d records get\n", benchmarkResult.getCount)
+	fmt.Printf("%d records miss\n", benchmarkResult.missCount)
+	fmt.Printf("%d records set\n", benchmarkResult.setCount)
+	fmt.Printf("%f seconds total\n", duration.Seconds())
+
+	statisticCountSum := 0
+	statisticTimeSum := time.Duration(0)
+
+	for i, statisticBucket := range benchmarkResult.StatisticBuckets {
+		if statisticBucket.count == 0 {
+			continue
+		}
+
+		statisticCountSum += statisticBucket.count
+		statisticTimeSum += statisticBucket.time
+
+		fmt.Printf("%d%% requests < %d ms\n", statisticCountSum*100/totalCount, i+1)
+	}
+
+	fmt.Printf("%d usec average for eqch request\n", int64(statisticTimeSum/time.Microsecond)/int64(statisticCountSum))
+	fmt.Printf("throughput is %f MB/s\n", float64((benchmarkResult.getCount+benchmarkResult.setCount)*valueSize)/1e6/duration.Seconds())
+	fmt.Printf("rps is %f\n", float64(totalCount)/float64(duration.Seconds()))
 }
