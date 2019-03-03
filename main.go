@@ -61,26 +61,27 @@ func pipelinedRun(cacheClient cache_client.CacheClient, cmds []*cache_client.Cmd
 	}
 }
 
-func runBenchmark(id, operationCount int, channel chan *BenchmarkResult) {
-	cacheClient := cache_client.NewCacheClient(cacheClientType, serverAddress)
+func runBenchmark(id int, benchmarkConfig *BenchmarkConfig, channel chan *BenchmarkResult) {
+	operationCount := benchmarkConfig.totalRequests / benchmarkConfig.totalThreads
+	cacheClient := cache_client.NewCacheClient(benchmarkConfig.cacheClientType, benchmarkConfig.serverAddress)
 	cmds := make([]*cache_client.Cmd, 0)
-	valuePrefix := strings.Repeat("a", valueSize)
+	valuePrefix := strings.Repeat("a", benchmarkConfig.valueSize)
 	benchmarkResult := &BenchmarkResult{0, 0, 0, make([]BenchmarkStatistic, 0)}
 
 	for i := 0; i < operationCount; i++ {
 		var randomNumber int
 
-		if keyspaceLength > 0 {
-			randomNumber = rand.Intn(keyspaceLength)
+		if benchmarkConfig.keyspaceLength > 0 {
+			randomNumber = rand.Intn(benchmarkConfig.keyspaceLength)
 		} else {
 			randomNumber = id*operationCount + i
 		}
 
 		key := fmt.Sprintf("%d", randomNumber)
 		value := fmt.Sprintf("%s%d", valuePrefix, randomNumber)
-		name := operation
+		name := benchmarkConfig.operation
 
-		if operation == "mixed" {
+		if benchmarkConfig.operation == "mixed" {
 			if rand.Intn(2) == 1 {
 				name = "set"
 			} else {
@@ -90,10 +91,10 @@ func runBenchmark(id, operationCount int, channel chan *BenchmarkResult) {
 
 		cmd := &cache_client.Cmd{Name: name, Key: key, Value: value, Error: nil}
 
-		if pipelineLength > 1 {
+		if benchmarkConfig.pipelineLength > 1 {
 			cmds = append(cmds, cmd)
 
-			if len(cmds) == pipelineLength {
+			if len(cmds) == benchmarkConfig.pipelineLength {
 				pipelinedRun(cacheClient, cmds, benchmarkResult)
 
 				cmds = make([]*cache_client.Cmd, 0)
@@ -110,42 +111,44 @@ func runBenchmark(id, operationCount int, channel chan *BenchmarkResult) {
 	channel <- benchmarkResult
 }
 
-var cacheClientType, serverAddress, operation string
-var totalRequests, valueSize, totalThreads, keyspaceLength, pipelineLength int
+func parseBenchmarkConfig() *BenchmarkConfig {
+	benchmarkConfig := &BenchmarkConfig{}
 
-func init() {
-	flag.StringVar(&cacheClientType, "type", "redis", "cache server type")
-	flag.StringVar(&serverAddress, "host", "localhost", "cache server address")
-	flag.IntVar(&totalRequests, "n", 1000, "total number of requests")
-	flag.IntVar(&valueSize, "d", 1000, "data size of SET/GET value in bytes")
-	flag.IntVar(&totalThreads, "c", 1, "number of parallel connections")
-	flag.StringVar(&operation, "t", "set", "test set, could be get/set/mixed")
-	flag.IntVar(&keyspaceLength, "r", 0, "keyspace length, use random keys from 0 to keyspacelen - 1")
-	flag.IntVar(&pipelineLength, "p", 1, "pipeline length")
+	flag.StringVar(&benchmarkConfig.cacheClientType, "type", "redis", "cache server type")
+	flag.StringVar(&benchmarkConfig.serverAddress, "host", "localhost", "cache server address")
+	flag.IntVar(&benchmarkConfig.totalRequests, "n", 1000, "total number of requests")
+	flag.IntVar(&benchmarkConfig.valueSize, "d", 1000, "data size of SET/GET value in bytes")
+	flag.IntVar(&benchmarkConfig.totalThreads, "c", 1, "number of parallel connections")
+	flag.StringVar(&benchmarkConfig.operation, "t", "set", "test set, could be get/set/mixed")
+	flag.IntVar(&benchmarkConfig.keyspaceLength, "r", 0, "keyspace length, use random keys from 0 to keyspacelen - 1")
+	flag.IntVar(&benchmarkConfig.pipelineLength, "p", 1, "pipeline length")
 	flag.Parse()
 
-	fmt.Println("cache client type is", cacheClientType)
-	fmt.Println("server address is", serverAddress)
-	fmt.Println("total number of requests", totalRequests)
-	fmt.Println("data size is", valueSize)
-	fmt.Println("we have", totalThreads, "parallel connections")
-	fmt.Println("operation is", operation)
-	fmt.Println("keyspace length is", keyspaceLength)
-	fmt.Println("pipeline length is", pipelineLength)
+	fmt.Println("cache client type is", benchmarkConfig.cacheClientType)
+	fmt.Println("server address is", benchmarkConfig.serverAddress)
+	fmt.Println("total number of requests", benchmarkConfig.totalRequests)
+	fmt.Println("data size is", benchmarkConfig.valueSize)
+	fmt.Println("we have", benchmarkConfig.totalThreads, "parallel connections")
+	fmt.Println("operation is", benchmarkConfig.operation)
+	fmt.Println("keyspace length is", benchmarkConfig.keyspaceLength)
+	fmt.Println("pipeline length is", benchmarkConfig.pipelineLength)
 
-	rand.Seed(time.Now().UnixNano())
+	return benchmarkConfig
 }
 
 func main() {
-	channel := make(chan *BenchmarkResult, totalThreads)
+	rand.Seed(time.Now().UnixNano())
+
+	benchmarkConfig := parseBenchmarkConfig()
+	channel := make(chan *BenchmarkResult, benchmarkConfig.totalThreads)
 	benchmarkResult := &BenchmarkResult{0, 0, 0, make([]BenchmarkStatistic, 0)}
 	startTime := time.Now()
 
-	for i := 0; i < totalThreads; i++ {
-		go runBenchmark(i, totalRequests/totalThreads, channel)
+	for i := 0; i < benchmarkConfig.totalThreads; i++ {
+		go runBenchmark(i, benchmarkConfig, channel)
 	}
 
-	for i := 0; i < totalThreads; i++ {
+	for i := 0; i < benchmarkConfig.totalThreads; i++ {
 		benchmarkResult.addResult(<-channel)
 	}
 
@@ -172,6 +175,6 @@ func main() {
 	}
 
 	fmt.Printf("%d usec average for eqch request\n", int64(totalDuration/time.Microsecond)/int64(totalOperationCount))
-	fmt.Printf("throughput is %f MB/s\n", float64((benchmarkResult.getCount+benchmarkResult.setCount)*valueSize)/1e6/duration.Seconds())
+	fmt.Printf("throughput is %f MB/s\n", float64((benchmarkResult.getCount+benchmarkResult.setCount)*benchmarkConfig.valueSize)/1e6/duration.Seconds())
 	fmt.Printf("rps is %f\n", float64(operationCount)/float64(duration.Seconds()))
 }
