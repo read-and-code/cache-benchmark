@@ -6,9 +6,9 @@ type CacheClient interface {
 	PipelinedRun([]*Cmd)
 }
 
-func NewCacheClient(cacheClientType, serverAddress string) CacheClient {
+func NewCacheClient(cacheClientType, host string, port int) CacheClient {
 	if cacheClientType == "http" {
-		return newHttpCacheClient(serverAddress)
+		return newHttpCacheClient(host, port)
 	}
 
 	panic("Unknown cache client type " + cacheClientType)

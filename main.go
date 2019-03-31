@@ -63,7 +63,7 @@ func pipelinedRun(cacheClient cache_client.CacheClient, cmds []*cache_client.Cmd
 
 func runBenchmark(id int, benchmarkConfig *BenchmarkConfig, channel chan *BenchmarkResult) {
 	operationCount := benchmarkConfig.totalRequests / benchmarkConfig.totalThreads
-	cacheClient := cache_client.NewCacheClient(benchmarkConfig.cacheClientType, benchmarkConfig.serverAddress)
+	cacheClient := cache_client.NewCacheClient(benchmarkConfig.cacheClientType, benchmarkConfig.serverAddress, benchmarkConfig.serverPort)
 	cmds := make([]*cache_client.Cmd, 0)
 	valuePrefix := strings.Repeat("a", benchmarkConfig.valueSize)
 	benchmarkResult := &BenchmarkResult{0, 0, 0, make([]BenchmarkStatistic, 0)}
@@ -115,7 +115,8 @@ func parseBenchmarkConfig() *BenchmarkConfig {
 	benchmarkConfig := &BenchmarkConfig{}
 
 	flag.StringVar(&benchmarkConfig.cacheClientType, "type", "redis", "cache server type")
-	flag.StringVar(&benchmarkConfig.serverAddress, "host", "localhost", "cache server address")
+	flag.StringVar(&benchmarkConfig.serverAddress, "host", "http://localhost", "cache server address")
+	flag.IntVar(&benchmarkConfig.serverPort, "port", 12345, "cache server post")
 	flag.IntVar(&benchmarkConfig.totalRequests, "n", 1000, "total number of requests")
 	flag.IntVar(&benchmarkConfig.valueSize, "d", 1000, "data size of SET/GET value in bytes")
 	flag.IntVar(&benchmarkConfig.totalThreads, "c", 1, "number of parallel connections")
@@ -126,6 +127,7 @@ func parseBenchmarkConfig() *BenchmarkConfig {
 
 	fmt.Println("cache client type is", benchmarkConfig.cacheClientType)
 	fmt.Println("server address is", benchmarkConfig.serverAddress)
+	fmt.Println("server port is", benchmarkConfig.serverPort)
 	fmt.Println("total number of requests", benchmarkConfig.totalRequests)
 	fmt.Println("data size is", benchmarkConfig.valueSize)
 	fmt.Println("we have", benchmarkConfig.totalThreads, "parallel connections")

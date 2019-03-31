@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -81,8 +82,8 @@ func (httpCacheClient *HttpCacheClient) PipelinedRun([]*Cmd) {
 	panic("HttpCacheClient pipelined run not implemented")
 }
 
-func newHttpCacheClient(serverAddress string) *HttpCacheClient {
+func newHttpCacheClient(host string, port int) *HttpCacheClient {
 	httpClient := &http.Client{Transport: &http.Transport{MaxIdleConnsPerHost: 1}}
 
-	return &HttpCacheClient{httpClient, "http://" + serverAddress + ":12345/cache/"}
+	return &HttpCacheClient{httpClient, host + ":" + strconv.Itoa(port) + "/cache/"}
 }

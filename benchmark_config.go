@@ -5,6 +5,8 @@ type BenchmarkConfig struct {
 
 	serverAddress string
 
+	serverPort int
+
 	operation string
 
 	totalRequests int
