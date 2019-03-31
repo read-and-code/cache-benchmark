@@ -174,7 +174,7 @@ func main() {
 		fmt.Printf("%d%% requests < %d ms\n", totalOperationCount*100/operationCount, i+1)
 	}
 
-	fmt.Printf("%d usec average for eqch request\n", int64(totalDuration/time.Microsecond)/int64(totalOperationCount))
+	fmt.Printf("%d usec average for each request\n", int64(totalDuration/time.Microsecond)/int64(totalOperationCount))
 	fmt.Printf("throughput is %f MB/s\n", float64((benchmarkResult.getCount+benchmarkResult.setCount)*benchmarkConfig.valueSize)/1e6/duration.Seconds())
 	fmt.Printf("rps is %f\n", float64(operationCount)/float64(duration.Seconds()))
 }
