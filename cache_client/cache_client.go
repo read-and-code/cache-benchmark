@@ -11,5 +11,9 @@ func NewCacheClient(cacheClientType, host string, port int) CacheClient {
 		return newHttpCacheClient(host, port)
 	}
 
+	if cacheClientType == "tcp" {
+		return newTcpCacheClient(host, port)
+	}
+
 	panic("Unknown cache client type " + cacheClientType)
 }
